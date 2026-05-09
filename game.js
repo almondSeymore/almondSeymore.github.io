@@ -38,7 +38,7 @@ let score = 0;
 let lives = 3;
 let gameOver = false;
 let wave = 1;
-let enemiesPerWave = 2;
+let enemiesPerWave = 4;
 let paused = false;
 let spawnQueue = 0;
 let spawnTimer = 0;
@@ -80,7 +80,7 @@ window.addEventListener("keyup", e => {
 });
 
 function shoot() {
-  if (bullets.length < 10) {
+  if (bullets.length < 8) {
     bullets.push({
       x: player.x,
       y: player.y - 25,
