@@ -4,6 +4,8 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
 ctx.font = "24px monospace";
 ctx.textAlign = "center";
 
@@ -19,7 +21,6 @@ const player = {
 let keys = {};
 let bullets = [];
 let enemies = [];
-let enemyDirection = 1;
 let score = 0;
 let lives = 3;
 let gameOver = false;
@@ -31,11 +32,16 @@ let spawnTimer = 0;
 let spawnDelay = 60;
 let damageFlash = 0;
 
+let touchLeft = false;
+let touchRight = false;
+let firing = false;
+let fireCooldown = 0;
+
 function createEnemies() {
   enemies = [];
   spawnQueue = enemiesPerWave;
   spawnTimer = 0;
-  spawnDelay = Math.max(10, 60 - wave * 5);
+  spawnDelay = Math.max(8, 60 - wave * 5);
 }
 
 createEnemies();
@@ -43,13 +49,13 @@ createEnemies();
 window.addEventListener("keydown", e => {
   keys[e.key] = true;
 
-  if (e.key === " " && !gameOver) {
+  if (e.key === " " && !gameOver && !paused) {
     shoot();
   }
 
   if (e.key.toLowerCase() === "p" && !gameOver) {
-  paused = !paused;
-}
+    paused = !paused;
+  }
 
   if (e.key.toLowerCase() === "r" && gameOver) {
     restartGame();
@@ -130,10 +136,7 @@ function updateEnemies() {
     if (!enemy.initialized) {
       enemy.initialized = true;
 
-      const mobileBoost =
-        /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
-          ? 1.45
-          : 1;
+      const mobileBoost = isMobile ? 1.45 : 1;
 
       enemy.speedX = (Math.random() - 0.5) * (2 + wave * 0.12);
 
@@ -178,7 +181,6 @@ function updateEnemies() {
       enemy.speedX *= -1;
     }
 
-    // If an enemy reaches the bottom, lose a life
     if (enemy.y > canvas.height + 20) {
       enemy.alive = false;
       lives--;
@@ -188,12 +190,6 @@ function updateEnemies() {
         gameOver = true;
       }
     }
-  }
-}
-
-function resetWavePosition() {
-  for (let enemy of enemies) {
-    enemy.y -= 100;
   }
 }
 
@@ -217,10 +213,10 @@ function checkCollisions() {
   }
 
   if (spawnQueue === 0 && enemies.every(enemy => !enemy.alive)) {
-  score += 500;
-  wave++;
-  enemiesPerWave += 2;
-  createEnemies();
+    score += 500;
+    wave++;
+    enemiesPerWave += 2;
+    createEnemies();
   }
 }
 
@@ -259,22 +255,28 @@ function drawEnemies() {
 
 function drawHUD() {
   ctx.fillStyle = "#dcdac0";
-  ctx.font = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
-  ? "34px monospace"
-  : "20px monospace";
+  ctx.font = isMobile ? "38px monospace" : "20px monospace";
 
   ctx.textAlign = "left";
-  ctx.fillText("SCORE: " + score, 20, 35);
-  ctx.fillText("LIVES: " + lives, 20, 65);
-  ctx.fillText("WAVE: " + wave, 20, 95);
+  ctx.fillText("SCORE: " + score, 20, 40);
+  ctx.fillText("LIVES: " + lives, 20, 78);
+  ctx.fillText("WAVE: " + wave, 20, 116);
 
-  ctx.textAlign = "right";
-  ctx.fillText("MOVE: ← → / A D   SHOOT: SPACE", canvas.width - 20, 35);
+  if (!isMobile) {
+    ctx.textAlign = "right";
+    ctx.fillText("MOVE: ← → / A D   SHOOT: SPACE", canvas.width - 20, 35);
+  }
 
   ctx.textAlign = "center";
-  ctx.font = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
-  ? "32px monospace"
-  : "24px monospace";
+  ctx.font = isMobile ? "34px monospace" : "24px monospace";
+}
+
+function drawDamageFlash() {
+  if (damageFlash > 0) {
+    ctx.fillStyle = "rgba(0, 120, 255, 0.35)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    damageFlash--;
+  }
 }
 
 function drawGameOver() {
@@ -289,14 +291,6 @@ function drawGameOver() {
   ctx.font = "22px monospace";
   ctx.fillText("FINAL SCORE: " + score, canvas.width / 2, canvas.height / 2);
   ctx.fillText("PRESS R TO RESTART", canvas.width / 2, canvas.height / 2 + 40);
-}
-
-function drawDamageFlash() {
-  if (damageFlash > 0) {
-    ctx.fillStyle = "rgba(0, 120, 255, 0.35)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    damageFlash--;
-  }
 }
 
 function drawPaused() {
@@ -316,7 +310,16 @@ function restartGame() {
   score = 0;
   lives = 3;
   bullets = [];
-  enemyDirection = 1;
+  enemies = [];
+  wave = 1;
+  enemiesPerWave = 2;
+  spawnQueue = 0;
+  spawnTimer = 0;
+  spawnDelay = 60;
+  damageFlash = 0;
+  paused = false;
+  firing = false;
+  fireCooldown = 0;
   gameOver = false;
   player.x = canvas.width / 2;
   createEnemies();
@@ -325,25 +328,35 @@ function restartGame() {
 function gameLoop() {
   drawBackground();
 
+  if (!gameOver && !paused) {
     if (firing) {
-    fireCooldown--;
+      fireCooldown--;
 
-    if (fireCooldown <= 0) {
+      if (fireCooldown <= 0) {
         shoot();
         fireCooldown = 10;
+      }
     }
-    }
+
+    updateSpawning();
+    updatePlayer();
+    updateBullets();
+    updateEnemies();
+    checkCollisions();
+  }
 
   drawPlayer();
   drawBullets();
   drawEnemies();
   drawHUD();
+  drawDamageFlash();
 
   if (gameOver) {
     drawGameOver();
   }
+
   if (paused && !gameOver) {
-  drawPaused();
+    drawPaused();
   }
 
   requestAnimationFrame(gameLoop);
@@ -355,17 +368,11 @@ window.addEventListener("resize", () => {
   player.y = canvas.height - 60;
 });
 
-
-let touchLeft = false;
-let touchRight = false;
-
 const controls = document.createElement("div");
 
 controls.innerHTML = `
-
 <div id="leftControls">
   <button id="shootBtn">^</button>
-  <button id="pauseBtn">P</button>
 </div>
 
 <div id="rightControls">
@@ -373,12 +380,14 @@ controls.innerHTML = `
   <button id="rightBtn">▶</button>
 </div>
 
+<button id="pauseBtn">P</button>
 `;
 
 document.body.appendChild(controls);
 
 const leftControls = document.getElementById("leftControls");
 const rightControls = document.getElementById("rightControls");
+const pauseBtn = document.getElementById("pauseBtn");
 
 leftControls.style.position = "fixed";
 leftControls.style.left = "20px";
@@ -394,63 +403,79 @@ rightControls.style.display = "flex";
 rightControls.style.gap = "12px";
 rightControls.style.zIndex = "9999";
 
-if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+pauseBtn.style.position = "fixed";
+pauseBtn.style.top = "20px";
+pauseBtn.style.right = "20px";
+pauseBtn.style.zIndex = "10000";
 
-  document.querySelectorAll("button").forEach(button => {
-    button.style.fontSize = "44px";
-    button.style.padding = "24px 30px";
-    button.style.touchAction = "none";
-    button.style.userSelect = "none";
-  });
-
-  const pauseBtn = document.getElementById("pauseBtn");
-
-  pauseBtn.style.position = "fixed";
-  pauseBtn.style.top = "20px";
-  pauseBtn.style.right = "20px";
-  pauseBtn.style.bottom = "auto";
-}
-
+document.querySelectorAll("button").forEach(button => {
+  button.style.fontSize = isMobile ? "50px" : "28px";
+  button.style.padding = isMobile ? "26px 34px" : "16px 20px";
+  button.style.background = "rgba(0,0,0,0.7)";
+  button.style.color = "#00ffee";
+  button.style.border = "1px solid #00ffee";
+  button.style.fontFamily = "monospace";
+  button.style.borderRadius = "6px";
+  button.style.backdropFilter = "blur(4px)";
+  button.style.touchAction = "none";
+  button.style.userSelect = "none";
+});
 
 function holdButton(id, onDown, onUp) {
   const btn = document.getElementById(id);
 
-  btn.addEventListener("touchstart", e => {
+  btn.addEventListener("pointerdown", e => {
     e.preventDefault();
+    btn.setPointerCapture(e.pointerId);
     onDown();
   });
 
-  btn.addEventListener("touchend", e => {
+  btn.addEventListener("pointerup", e => {
+    e.preventDefault();
+    onUp();
+  });
+
+  btn.addEventListener("pointercancel", e => {
+    e.preventDefault();
+    onUp();
+  });
+
+  btn.addEventListener("pointerleave", e => {
     e.preventDefault();
     onUp();
   });
 }
 
-holdButton("leftBtn", () => touchLeft = true, () => touchLeft = false);
-holdButton("rightBtn", () => touchRight = true, () => touchRight = false);
+holdButton("leftBtn", () => {
+  touchLeft = true;
+}, () => {
+  touchLeft = false;
+});
 
-let firing = false;
-let fireCooldown = 0;
+holdButton("rightBtn", () => {
+  touchRight = true;
+}, () => {
+  touchRight = false;
+});
 
-document.getElementById("shootBtn").addEventListener("pointerdown", e => {
-  e.preventDefault();
+holdButton("shootBtn", () => {
   firing = true;
-  if (!gameOver && !paused) shoot();
-});
+  fireCooldown = 0;
 
-document.getElementById("shootBtn").addEventListener("pointerup", e => {
-  e.preventDefault();
+  if (!gameOver && !paused) {
+    shoot();
+    fireCooldown = 10;
+  }
+}, () => {
   firing = false;
 });
 
-document.getElementById("shootBtn").addEventListener("pointercancel", e => {
+pauseBtn.addEventListener("pointerdown", e => {
   e.preventDefault();
-  firing = false;
-});
 
-document.getElementById("pauseBtn").addEventListener("touchstart", e => {
-  e.preventDefault();
-  if (!gameOver) paused = !paused;
+  if (!gameOver) {
+    paused = !paused;
+  }
 });
 
 gameLoop();
