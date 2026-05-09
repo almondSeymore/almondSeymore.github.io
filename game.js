@@ -29,6 +29,7 @@ let paused = false;
 let spawnQueue = 0;
 let spawnTimer = 0;
 let spawnDelay = 60;
+let damageFlash = 0;
 
 function createEnemies() {
   enemies = [];
@@ -129,76 +130,63 @@ function updateEnemies() {
     if (!enemy.initialized) {
       enemy.initialized = true;
 
-      enemy.speedX = (Math.random() - 0.5) * (1.5 + wave * 0.15);
       const mobileBoost =
         /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
-            ? 1.7
-            : 1;
+          ? 1.45
+          : 1;
 
-        enemy.speedY =
+      enemy.speedX = (Math.random() - 0.5) * (2 + wave * 0.12);
+
+      enemy.speedY =
         (
-            0.8 +
-            Math.random() * 1.4 +
-            wave * 0.12
+          0.8 +
+          Math.random() * 1.4 +
+          wave * 0.12
         ) * mobileBoost;
 
       enemy.wobbleOffset = Math.random() * Math.PI * 2;
       enemy.wobbleSpeed = 0.02 + Math.random() * 0.04;
-      enemy.wobbleAmount = 1 + Math.random() * 2.5;
+      enemy.wobbleAmount = 1.5 + Math.random() * 3;
+
+      enemy.changeTimer = Math.floor(Math.random() * 90) + 40;
     }
 
-    const dx = player.x - enemy.x;
-    const distanceX = Math.abs(dx);
+    enemy.changeTimer--;
 
-    // Enemies gently steer toward the player's x-position
-    enemy.speedX += dx * 0.0008;
+    if (enemy.changeTimer <= 0) {
+      enemy.speedX += (Math.random() - 0.5) * 2.5;
+      enemy.changeTimer = Math.floor(Math.random() * 90) + 40;
+    }
 
-    // Limit side-to-side speed so movement stays fluid
-    if (enemy.speedX > 3) enemy.speedX = 3;
-    if (enemy.speedX < -3) enemy.speedX = -3;
+    if (enemy.speedX > 3.5) enemy.speedX = 3.5;
+    if (enemy.speedX < -3.5) enemy.speedX = -3.5;
 
-    // Move downward faster as they get closer to the player
-    const dangerBoost = enemy.y / canvas.height;
-    enemy.speedY += 0.002 + dangerBoost * 0.003;
-
-    if (enemy.speedY > 3.8) enemy.speedY = 3.8;
-
-    // Smooth independent movement
     enemy.x += enemy.speedX;
     enemy.y += enemy.speedY;
 
-    // Organic wobble
-    enemy.x += Math.sin(Date.now() * enemy.wobbleSpeed + enemy.wobbleOffset) * enemy.wobbleAmount;
+    enemy.x +=
+      Math.sin(Date.now() * enemy.wobbleSpeed + enemy.wobbleOffset)
+      * enemy.wobbleAmount;
 
-    // Keep enemies on screen
     if (enemy.x < 30) {
       enemy.x = 30;
-      enemy.speedX *= -0.6;
+      enemy.speedX *= -1;
     }
 
     if (enemy.x > canvas.width - 30) {
       enemy.x = canvas.width - 30;
-      enemy.speedX *= -0.6;
+      enemy.speedX *= -1;
     }
 
-    // If enemy reaches player area, lose a life
-    if (enemy.y > player.y - 30 && distanceX < 80) {
+    // If an enemy reaches the bottom, lose a life
+    if (enemy.y > canvas.height + 20) {
+      enemy.alive = false;
       lives--;
-
-      resetWavePosition();
+      damageFlash = 10;
 
       if (lives <= 0) {
         gameOver = true;
       }
-
-      break;
-    }
-
-    // If enemy passes the bottom, loop it back upward
-    if (enemy.y > canvas.height + 40) {
-      enemy.y = -40;
-      enemy.x = Math.random() * canvas.width;
-      enemy.speedY = 0.8 + Math.random() * 1.2;
     }
   }
 }
@@ -303,6 +291,14 @@ function drawGameOver() {
   ctx.fillText("PRESS R TO RESTART", canvas.width / 2, canvas.height / 2 + 40);
 }
 
+function drawDamageFlash() {
+  if (damageFlash > 0) {
+    ctx.fillStyle = "rgba(0, 120, 255, 0.35)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    damageFlash--;
+  }
+}
+
 function drawPaused() {
   ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -335,6 +331,7 @@ function gameLoop() {
   updateBullets();
   updateEnemies();
   checkCollisions();
+  drawDamageFlash();
 }
 
   drawPlayer();
