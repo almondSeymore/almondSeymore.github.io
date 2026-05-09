@@ -130,7 +130,17 @@ function updateEnemies() {
       enemy.initialized = true;
 
       enemy.speedX = (Math.random() - 0.5) * (1.5 + wave * 0.15);
-      enemy.speedY = 0.6 + Math.random() * 1.2 + wave * 0.12;
+      const mobileBoost =
+        /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+            ? 1.7
+            : 1;
+
+        enemy.speedY =
+        (
+            0.8 +
+            Math.random() * 1.4 +
+            wave * 0.12
+        ) * mobileBoost;
 
       enemy.wobbleOffset = Math.random() * Math.PI * 2;
       enemy.wobbleSpeed = 0.02 + Math.random() * 0.04;
@@ -261,7 +271,10 @@ function drawEnemies() {
 
 function drawHUD() {
   ctx.fillStyle = "#dcdac0";
-  ctx.font = "20px monospace";
+  ctx.font = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+  ? "34px monospace"
+  : "20px monospace";
+
   ctx.textAlign = "left";
   ctx.fillText("SCORE: " + score, 20, 35);
   ctx.fillText("LIVES: " + lives, 20, 65);
@@ -271,7 +284,9 @@ function drawHUD() {
   ctx.fillText("MOVE: ← → / A D   SHOOT: SPACE", canvas.width - 20, 35);
 
   ctx.textAlign = "center";
-  ctx.font = "24px monospace";
+  ctx.font = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+  ? "32px monospace"
+  : "24px monospace";
 }
 
 function drawGameOver() {
@@ -399,7 +414,28 @@ document.querySelectorAll("button").forEach(button => {
   button.style.borderRadius = "6px";
 
   button.style.backdropFilter = "blur(4px)";
+
+  if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+
+  // Bigger mobile buttons
+  document.querySelectorAll("button").forEach(button => {
+
+    button.style.fontSize = "38px";
+
+    button.style.padding = "20px 26px";
+  });
+
+  // Move pause button to top-right
+  const pauseBtn = document.getElementById("pauseBtn");
+
+  pauseBtn.style.position = "fixed";
+  pauseBtn.style.top = "20px";
+  pauseBtn.style.right = "20px";
+  pauseBtn.style.bottom = "auto";
+
+}
 });
+
 
 function holdButton(id, onDown, onUp) {
   const btn = document.getElementById(id);
