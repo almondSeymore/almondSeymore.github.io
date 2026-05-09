@@ -348,29 +348,57 @@ let touchLeft = false;
 let touchRight = false;
 
 const controls = document.createElement("div");
+
 controls.innerHTML = `
-  <button id="leftBtn">◀</button>
+
+<div id="leftControls">
   <button id="shootBtn">^</button>
-  <button id="rightBtn">▶</button>
   <button id="pauseBtn">P</button>
+</div>
+
+<div id="rightControls">
+  <button id="leftBtn">◀</button>
+  <button id="rightBtn">▶</button>
+</div>
+
 `;
-controls.style.position = "fixed";
-controls.style.bottom = "20px";
-controls.style.left = "0";
-controls.style.width = "100%";
-controls.style.display = "flex";
-controls.style.justifyContent = "center";
-controls.style.gap = "14px";
-controls.style.zIndex = "9999";
+
 document.body.appendChild(controls);
 
+const leftControls = document.getElementById("leftControls");
+const rightControls = document.getElementById("rightControls");
+
+leftControls.style.position = "fixed";
+leftControls.style.left = "20px";
+leftControls.style.bottom = "120px";
+leftControls.style.display = "flex";
+leftControls.style.gap = "12px";
+leftControls.style.zIndex = "9999";
+
+rightControls.style.position = "fixed";
+rightControls.style.right = "20px";
+rightControls.style.bottom = "120px";
+rightControls.style.display = "flex";
+rightControls.style.gap = "12px";
+rightControls.style.zIndex = "9999";
+
 document.querySelectorAll("button").forEach(button => {
-  button.style.fontSize = "24px";
-  button.style.padding = "12px 18px";
-  button.style.background = "black";
+
+  button.style.fontSize = "28px";
+
+  button.style.padding = "16px 20px";
+
+  button.style.background = "rgba(0,0,0,0.7)";
+
   button.style.color = "#00ffee";
+
   button.style.border = "1px solid #00ffee";
+
   button.style.fontFamily = "monospace";
+
+  button.style.borderRadius = "6px";
+
+  button.style.backdropFilter = "blur(4px)";
 });
 
 function holdButton(id, onDown, onUp) {
