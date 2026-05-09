@@ -4,6 +4,18 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+document.body.style.margin = "0";
+document.body.style.overflow = "hidden";
+document.body.style.touchAction = "none";
+document.body.style.userSelect = "none";
+document.body.style.webkitUserSelect = "none";
+document.body.style.webkitTouchCallout = "none";
+
+canvas.style.touchAction = "none";
+canvas.style.userSelect = "none";
+canvas.style.webkitUserSelect = "none";
+canvas.style.webkitTouchCallout = "none";
+
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 ctx.font = "24px monospace";
@@ -418,7 +430,10 @@ document.querySelectorAll("button").forEach(button => {
   button.style.borderRadius = "6px";
   button.style.backdropFilter = "blur(4px)";
   button.style.touchAction = "none";
-  button.style.userSelect = "none";
+button.style.userSelect = "none";
+button.style.webkitUserSelect = "none";
+button.style.webkitTouchCallout = "none";
+button.style.webkitTapHighlightColor = "transparent";
 });
 
 function holdButton(id, onDown, onUp) {
@@ -469,6 +484,12 @@ holdButton("shootBtn", () => {
 }, () => {
   firing = false;
 });
+
+document.addEventListener("gesturestart", e => e.preventDefault());
+document.addEventListener("gesturechange", e => e.preventDefault());
+document.addEventListener("gestureend", e => e.preventDefault());
+
+document.addEventListener("contextmenu", e => e.preventDefault());
 
 pauseBtn.addEventListener("pointerdown", e => {
   e.preventDefault();
