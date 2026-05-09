@@ -325,14 +325,14 @@ function restartGame() {
 function gameLoop() {
   drawBackground();
 
-  if (!gameOver && !paused) {
-    updateSpawning();
-  updatePlayer();
-  updateBullets();
-  updateEnemies();
-  checkCollisions();
-  drawDamageFlash();
-}
+    if (firing) {
+    fireCooldown--;
+
+    if (fireCooldown <= 0) {
+        shoot();
+        fireCooldown = 10;
+    }
+    }
 
   drawPlayer();
   drawBullets();
@@ -394,44 +394,22 @@ rightControls.style.display = "flex";
 rightControls.style.gap = "12px";
 rightControls.style.zIndex = "9999";
 
-document.querySelectorAll("button").forEach(button => {
+if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
 
-  button.style.fontSize = "28px";
-
-  button.style.padding = "16px 20px";
-
-  button.style.background = "rgba(0,0,0,0.7)";
-
-  button.style.color = "#00ffee";
-
-  button.style.border = "1px solid #00ffee";
-
-  button.style.fontFamily = "monospace";
-
-  button.style.borderRadius = "6px";
-
-  button.style.backdropFilter = "blur(4px)";
-
-  if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-
-  // Bigger mobile buttons
   document.querySelectorAll("button").forEach(button => {
-
-    button.style.fontSize = "38px";
-
-    button.style.padding = "20px 26px";
+    button.style.fontSize = "44px";
+    button.style.padding = "24px 30px";
+    button.style.touchAction = "none";
+    button.style.userSelect = "none";
   });
 
-  // Move pause button to top-right
   const pauseBtn = document.getElementById("pauseBtn");
 
   pauseBtn.style.position = "fixed";
   pauseBtn.style.top = "20px";
   pauseBtn.style.right = "20px";
   pauseBtn.style.bottom = "auto";
-
 }
-});
 
 
 function holdButton(id, onDown, onUp) {
@@ -451,9 +429,23 @@ function holdButton(id, onDown, onUp) {
 holdButton("leftBtn", () => touchLeft = true, () => touchLeft = false);
 holdButton("rightBtn", () => touchRight = true, () => touchRight = false);
 
-document.getElementById("shootBtn").addEventListener("touchstart", e => {
+let firing = false;
+let fireCooldown = 0;
+
+document.getElementById("shootBtn").addEventListener("pointerdown", e => {
   e.preventDefault();
+  firing = true;
   if (!gameOver && !paused) shoot();
+});
+
+document.getElementById("shootBtn").addEventListener("pointerup", e => {
+  e.preventDefault();
+  firing = false;
+});
+
+document.getElementById("shootBtn").addEventListener("pointercancel", e => {
+  e.preventDefault();
+  firing = false;
 });
 
 document.getElementById("pauseBtn").addEventListener("touchstart", e => {
