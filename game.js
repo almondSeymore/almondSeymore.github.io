@@ -293,17 +293,61 @@ function drawDamageFlash() {
 }
 
 function drawGameOver() {
+
   ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = "#dcdac0";
-  ctx.font = "44px monospace";
-  ctx.textAlign = "center";
-  ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 40);
 
-  ctx.font = "22px monospace";
-  ctx.fillText("FINAL SCORE: " + score, canvas.width / 2, canvas.height / 2);
-  ctx.fillText("PRESS R TO RESTART", canvas.width / 2, canvas.height / 2 + 40);
+  ctx.font = `${44 * gameScale}px monospace`;
+
+  ctx.textAlign = "center";
+
+  ctx.fillText(
+    "GAME OVER",
+    canvas.width / 2,
+    canvas.height / 2 - 80
+  );
+
+  ctx.font = `${22 * gameScale}px monospace`;
+
+  ctx.fillText(
+    "FINAL SCORE: " + score,
+    canvas.width / 2,
+    canvas.height / 2 - 30
+  );
+
+  // restart button
+  const btnWidth = isMobile ? 180 : 240;
+  const btnHeight = isMobile ? 55 : 70;
+
+  const btnX = canvas.width / 2 - btnWidth / 2;
+  const btnY = canvas.height / 2 + 20;
+
+  ctx.fillStyle = "rgba(0,255,238,0.15)";
+  ctx.fillRect(btnX, btnY, btnWidth, btnHeight);
+
+  ctx.strokeStyle = "#00ffee";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(btnX, btnY, btnWidth, btnHeight);
+
+  ctx.fillStyle = "#00ffee";
+
+  ctx.font = `${26 * gameScale}px monospace`;
+
+  ctx.fillText(
+    "RESTART",
+    canvas.width / 2,
+    btnY + btnHeight / 2 + 10
+  );
+
+  // store button bounds
+  restartButton = {
+    x: btnX,
+    y: btnY,
+    width: btnWidth,
+    height: btnHeight
+  };
 }
 
 function drawPaused() {
@@ -422,8 +466,8 @@ pauseBtn.style.right = "20px";
 pauseBtn.style.zIndex = "10000";
 
 document.querySelectorAll("button").forEach(button => {
-  button.style.fontSize = isMobile ? "50px" : "28px";
-  button.style.padding = isMobile ? "26px 34px" : "16px 20px";
+  button.style.fontSize = isMobile ? "22px" : "28px";
+  button.style.padding = isMobile ? "10px 14px" : "16px 20px";
   button.style.background = "rgba(0,0,0,0.7)";
   button.style.color = "#00ffee";
   button.style.border = "1px solid #00ffee";
@@ -498,6 +542,25 @@ pauseBtn.addEventListener("pointerdown", e => {
   if (!gameOver) {
     paused = !paused;
   }
+});canvas.addEventListener("pointerdown", e => {
+
+  if (!gameOver || !restartButton) return;
+
+  const rect = canvas.getBoundingClientRect();
+
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  if (
+    x > restartButton.x &&
+    x < restartButton.x + restartButton.width &&
+    y > restartButton.y &&
+    y < restartButton.y + restartButton.height
+  ) {
+    restartGame();
+  }
 });
+
+
 
 gameLoop();
