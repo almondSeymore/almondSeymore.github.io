@@ -79,7 +79,7 @@ window.addEventListener("keyup", e => {
 });
 
 function shoot() {
-  if (bullets.length < 5) {
+  if (bullets.length < 20) {
     bullets.push({
       x: player.x,
       y: player.y - 25,
@@ -346,7 +346,7 @@ function gameLoop() {
 
       if (fireCooldown <= 0) {
         shoot();
-        fireCooldown = 10;
+        fireCooldown = 4;
       }
     }
 
