@@ -80,7 +80,7 @@ window.addEventListener("keyup", e => {
 });
 
 function shoot() {
-  if (bullets.length < 20) {
+  if (bullets.length < 10) {
     bullets.push({
       x: player.x,
       y: player.y - 25,
