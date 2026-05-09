@@ -1,8 +1,6 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -18,21 +16,19 @@ canvas.style.userSelect = "none";
 canvas.style.webkitUserSelect = "none";
 canvas.style.webkitTouchCallout = "none";
 
-document.addEventListener("gesturestart", e => e.preventDefault());
-document.addEventListener("gesturechange", e => e.preventDefault());
-document.addEventListener("gestureend", e => e.preventDefault());
-document.addEventListener("contextmenu", e => e.preventDefault());
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+const gameScale = isMobile ? 0.72 : 1;
 
-ctx.font = isMobile ? "18px monospace" : "24px monospace";
+ctx.font = "24px monospace";
 ctx.textAlign = "center";
 
 const player = {
   x: canvas.width / 2,
-  y: isMobile ? canvas.height - 110 : canvas.height - 60,
-  speed: isMobile ? 8 : 7,
+  y: canvas.height - 60,
+  speed: 7,
   text: "!!*+*+*!!",
-  width: 130,
-  height: 24
+  width: 130 * gameScale,
+  height: 24 * gameScale
 };
 
 let keys = {};
@@ -44,7 +40,6 @@ let gameOver = false;
 let wave = 1;
 let enemiesPerWave = 2;
 let paused = false;
-
 let spawnQueue = 0;
 let spawnTimer = 0;
 let spawnDelay = 60;
@@ -85,11 +80,11 @@ window.addEventListener("keyup", e => {
 });
 
 function shoot() {
-  if (bullets.length < 10) {
+  if (bullets.length < 20) {
     bullets.push({
       x: player.x,
       y: player.y - 25,
-      speed: isMobile ? 11 : 9,
+      speed: 9,
       text: "^",
       width: 12,
       height: 20
@@ -159,7 +154,11 @@ function updateEnemies() {
       enemy.speedX = (Math.random() - 0.5) * (2 + wave * 0.12);
 
       enemy.speedY =
-        (0.8 + Math.random() * 1.4 + wave * 0.12) * mobileBoost;
+        (
+          0.8 +
+          Math.random() * 1.4 +
+          wave * 0.12
+        ) * mobileBoost;
 
       enemy.wobbleOffset = Math.random() * Math.PI * 2;
       enemy.wobbleSpeed = 0.02 + Math.random() * 0.04;
@@ -182,8 +181,8 @@ function updateEnemies() {
     enemy.y += enemy.speedY;
 
     enemy.x +=
-      Math.sin(Date.now() * enemy.wobbleSpeed + enemy.wobbleOffset) *
-      enemy.wobbleAmount;
+      Math.sin(Date.now() * enemy.wobbleSpeed + enemy.wobbleOffset)
+      * enemy.wobbleAmount;
 
     if (enemy.x < 30) {
       enemy.x = 30;
@@ -246,15 +245,11 @@ function drawBackground() {
 
 function drawPlayer() {
   ctx.fillStyle = "#00ffee";
-  ctx.font = isMobile ? "18px monospace" : "24px monospace";
-  ctx.textAlign = "center";
   ctx.fillText(player.text, player.x, player.y);
 }
 
 function drawBullets() {
   ctx.fillStyle = "#ffffff";
-  ctx.font = isMobile ? "18px monospace" : "24px monospace";
-  ctx.textAlign = "center";
 
   for (let bullet of bullets) {
     ctx.fillText(bullet.text, bullet.x, bullet.y);
@@ -263,8 +258,6 @@ function drawBullets() {
 
 function drawEnemies() {
   ctx.fillStyle = "#ff4fd8";
-  ctx.font = isMobile ? "18px monospace" : "24px monospace";
-  ctx.textAlign = "center";
 
   for (let enemy of enemies) {
     if (enemy.alive) {
@@ -275,12 +268,12 @@ function drawEnemies() {
 
 function drawHUD() {
   ctx.fillStyle = "#dcdac0";
-  ctx.font = isMobile ? "24px monospace" : "20px monospace";
+  ctx.font = isMobile ? "38px monospace" : "20px monospace";
 
   ctx.textAlign = "left";
-  ctx.fillText("SCORE: " + score, 20, 35);
-  ctx.fillText("LIVES: " + lives, 20, 65);
-  ctx.fillText("WAVE: " + wave, 20, 95);
+  ctx.fillText("SCORE: " + score, 20, 40);
+  ctx.fillText("LIVES: " + lives, 20, 78);
+  ctx.fillText("WAVE: " + wave, 20, 116);
 
   if (!isMobile) {
     ctx.textAlign = "right";
@@ -288,6 +281,7 @@ function drawHUD() {
   }
 
   ctx.textAlign = "center";
+  ctx.font = isMobile ? "34px monospace" : "24px monospace";
 }
 
 function drawDamageFlash() {
@@ -303,11 +297,11 @@ function drawGameOver() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = "#dcdac0";
-  ctx.font = isMobile ? "34px monospace" : "44px monospace";
+  ctx.font = "44px monospace";
   ctx.textAlign = "center";
   ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 40);
 
-  ctx.font = isMobile ? "20px monospace" : "22px monospace";
+  ctx.font = "22px monospace";
   ctx.fillText("FINAL SCORE: " + score, canvas.width / 2, canvas.height / 2);
   ctx.fillText("PRESS R TO RESTART", canvas.width / 2, canvas.height / 2 + 40);
 }
@@ -317,11 +311,11 @@ function drawPaused() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = "#dcdac0";
-  ctx.font = isMobile ? "34px monospace" : "44px monospace";
+  ctx.font = "44px monospace";
   ctx.textAlign = "center";
   ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
 
-  ctx.font = isMobile ? "20px monospace" : "22px monospace";
+  ctx.font = "22px monospace";
   ctx.fillText("PRESS P TO RESUME", canvas.width / 2, canvas.height / 2 + 40);
 }
 
@@ -353,7 +347,7 @@ function gameLoop() {
 
       if (fireCooldown <= 0) {
         shoot();
-        fireCooldown = 6;
+        fireCooldown = 4;
       }
     }
 
@@ -384,7 +378,7 @@ function gameLoop() {
 window.addEventListener("resize", () => {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-  player.y = isMobile ? canvas.height - 110 : canvas.height - 60;
+  player.y = canvas.height - 60;
 });
 
 const controls = document.createElement("div");
@@ -410,14 +404,14 @@ const pauseBtn = document.getElementById("pauseBtn");
 
 leftControls.style.position = "fixed";
 leftControls.style.left = "20px";
-leftControls.style.bottom = isMobile ? "110px" : "120px";
+leftControls.style.bottom = "120px";
 leftControls.style.display = "flex";
 leftControls.style.gap = "12px";
 leftControls.style.zIndex = "9999";
 
 rightControls.style.position = "fixed";
 rightControls.style.right = "20px";
-rightControls.style.bottom = isMobile ? "110px" : "120px";
+rightControls.style.bottom = "120px";
 rightControls.style.display = "flex";
 rightControls.style.gap = "12px";
 rightControls.style.zIndex = "9999";
@@ -428,8 +422,8 @@ pauseBtn.style.right = "20px";
 pauseBtn.style.zIndex = "10000";
 
 document.querySelectorAll("button").forEach(button => {
-  button.style.fontSize = isMobile ? "36px" : "28px";
-  button.style.padding = isMobile ? "18px 24px" : "16px 20px";
+  button.style.fontSize = isMobile ? "50px" : "28px";
+  button.style.padding = isMobile ? "26px 34px" : "16px 20px";
   button.style.background = "rgba(0,0,0,0.7)";
   button.style.color = "#00ffee";
   button.style.border = "1px solid #00ffee";
@@ -437,10 +431,10 @@ document.querySelectorAll("button").forEach(button => {
   button.style.borderRadius = "6px";
   button.style.backdropFilter = "blur(4px)";
   button.style.touchAction = "none";
-  button.style.userSelect = "none";
-  button.style.webkitUserSelect = "none";
-  button.style.webkitTouchCallout = "none";
-  button.style.webkitTapHighlightColor = "transparent";
+button.style.userSelect = "none";
+button.style.webkitUserSelect = "none";
+button.style.webkitTouchCallout = "none";
+button.style.webkitTapHighlightColor = "transparent";
 });
 
 function holdButton(id, onDown, onUp) {
@@ -486,11 +480,17 @@ holdButton("shootBtn", () => {
 
   if (!gameOver && !paused) {
     shoot();
-    fireCooldown = 6;
+    fireCooldown = 10;
   }
 }, () => {
   firing = false;
 });
+
+document.addEventListener("gesturestart", e => e.preventDefault());
+document.addEventListener("gesturechange", e => e.preventDefault());
+document.addEventListener("gestureend", e => e.preventDefault());
+
+document.addEventListener("contextmenu", e => e.preventDefault());
 
 pauseBtn.addEventListener("pointerdown", e => {
   e.preventDefault();
